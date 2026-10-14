@@ -44,8 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnToggleSfx.addEventListener('click', () => {
       soundCtrl.sfxEnabled = !soundCtrl.sfxEnabled;
       btnToggleSfx.classList.toggle('muted', !soundCtrl.sfxEnabled);
-      btnToggleSfx.title = soundCtrl.sfxEnabled ? 'ปิดเสียงเอฟเฟกต์' : 'เปิดเสียงเอฟเฟกต์';
-      btnToggleSfx.innerHTML = soundCtrl.sfxEnabled ? '🔊 SFX' : '🔇 SFX';
     });
   }
 
@@ -53,8 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnToggleVoice.addEventListener('click', () => {
       soundCtrl.voiceEnabled = !soundCtrl.voiceEnabled;
       btnToggleVoice.classList.toggle('muted', !soundCtrl.voiceEnabled);
-      btnToggleVoice.title = soundCtrl.voiceEnabled ? 'ปิดเสียงออกเสียง' : 'เปิดเสียงออกเสียง';
-      btnToggleVoice.innerHTML = soundCtrl.voiceEnabled ? '🗣️ เสียงญี่ปุ่น' : '🤐 เสียงญี่ปุ่น';
     });
   }
 });

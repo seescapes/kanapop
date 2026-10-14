@@ -143,9 +143,9 @@ export class BubblePopGame {
     let html = '';
     for (let i = 0; i < this.maxLives; i++) {
       if (i < this.lives) {
-        html += '<span class="heart active">❤️</span>';
+        html += '<span class="heart active">♥</span>';
       } else {
-        html += '<span class="heart empty">🖤</span>';
+        html += '<span class="heart empty">♥</span>';
       }
     }
     this.heartsContainer.innerHTML = html;
@@ -175,6 +175,7 @@ export class BubblePopGame {
     this.nextTarget();
 
     this.lastSpawnTime = performance.now();
+    this.lastFrameTime = null;
     cancelAnimationFrame(this.animationFrameId);
     this.animationFrameId = requestAnimationFrame((t) => this.gameLoop(t));
 
@@ -185,10 +186,11 @@ export class BubblePopGame {
     if (!this.isPlaying) return;
     this.isPaused = !this.isPaused;
     if (this.btnPause) {
-      this.btnPause.textContent = this.isPaused ? '▶ เล่นต่อ' : '⏸ พักเกม';
+      this.btnPause.textContent = this.isPaused ? 'Resume' : 'Pause';
     }
     if (!this.isPaused) {
       this.lastSpawnTime = performance.now();
+      this.lastFrameTime = null;
       this.animationFrameId = requestAnimationFrame((t) => this.gameLoop(t));
     }
   }
@@ -211,13 +213,14 @@ export class BubblePopGame {
       this.targetRomajiEl.textContent = chosen.romaji.toUpperCase();
     }
 
-    if (this.targetTypeEl) {
-      this.targetTypeEl.textContent = type === 'hiragana' ? 'Hiragana (ひらがな)' : 'Katakana (カタカナ)';
-    }
-
     // Play Japanese audio for new target
     const char = type === 'hiragana' ? chosen.hiragana : chosen.katakana;
     soundCtrl.speak(char);
+
+    // Bubbles already on screen only count as targets if they match the new target
+    this.bubbles.forEach(b => {
+      b.isTarget = b.romaji === chosen.romaji && b.kanaType === type;
+    });
 
     // Ensure a target bubble exists or is spawned promptly
     this.ensureTargetBubbleExists();
@@ -270,8 +273,7 @@ export class BubblePopGame {
     bubbleEl.dataset.id = bubbleId;
     bubbleEl.style.width = `${bubbleSize}px`;
     bubbleEl.style.height = `${bubbleSize}px`;
-    bubbleEl.style.left = `${startX}px`;
-    bubbleEl.style.top = `${startY}px`;
+    bubbleEl.style.transform = `translate3d(${startX}px, ${startY}px, 0)`;
 
     bubbleEl.innerHTML = `
       <span class="bubble-char">${char}</span>
@@ -285,6 +287,7 @@ export class BubblePopGame {
       element: bubbleEl,
       char: char,
       romaji: itemData.romaji,
+      kanaType: itemType,
       isTarget: isTarget,
       x: startX,
       y: startY,
@@ -353,7 +356,7 @@ export class BubblePopGame {
       soundCtrl.playPop();
       soundCtrl.playWrong();
 
-      this.showFloatingText('ผิด! -1❤️', bubble.x, bubble.y, 'wrong');
+      this.showFloatingText('−1 ♥', bubble.x, bubble.y, 'wrong');
       this.shakeArena();
 
       this.removeBubble(index);
@@ -388,7 +391,7 @@ export class BubblePopGame {
     if (this.combo >= 3) {
       this.comboBadge.classList.remove('hidden');
       if (this.comboCountEl) {
-        this.comboCountEl.textContent = `${this.combo}x Combo!`;
+        this.comboCountEl.textContent = `${this.combo}x`;
       }
       this.comboBadge.classList.add('pulse');
     } else {
@@ -399,7 +402,7 @@ export class BubblePopGame {
 
   createBurstParticles(centerX, centerY) {
     if (!this.arena) return;
-    const colors = ['#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa', '#ffffff'];
+    const colors = ['#d9482b', '#e8a33d', '#4f7a6b', '#3f5f8a', '#ffffff'];
 
     for (let i = 0; i < 10; i++) {
       const p = document.createElement('div');
@@ -480,7 +483,7 @@ export class BubblePopGame {
     if (this.finalScoreEl) this.finalScoreEl.textContent = this.score;
     if (this.finalHighScoreEl) {
       this.finalHighScoreEl.textContent = isNewHigh
-        ? `${this.highScore} (🎉 สถิติใหม่!)`
+        ? `${this.highScore} ★`
         : this.highScore;
     }
     if (this.finalAccuracyEl) this.finalAccuracyEl.textContent = `${accuracy}%`;
@@ -489,7 +492,7 @@ export class BubblePopGame {
     // Render missed characters review list
     if (this.missedReviewList) {
       if (this.missedItems.size === 0) {
-        this.missedReviewList.innerHTML = '<span class="text-sm text-green-500">ยอดเยี่ยมมาก! ไม่มีตัวอักษรที่ตอบผิดเลย</span>';
+        this.missedReviewList.innerHTML = '<span class="missed-none">Perfect!</span>';
       } else {
         const items = Array.from(this.missedItems);
         this.missedReviewList.innerHTML = items.map(item => `
@@ -516,6 +519,11 @@ export class BubblePopGame {
   gameLoop(currentTime) {
     if (!this.isPlaying || this.isPaused) return;
 
+    const frameScale = this.lastFrameTime
+      ? Math.min((currentTime - this.lastFrameTime) / (1000 / 60), 3)
+      : 1;
+    this.lastFrameTime = currentTime;
+
     // Spawn bubbles periodically
     const spawnInterval = Math.max(1400 - (this.score / 1000) * 150, 750);
     if (currentTime - this.lastSpawnTime > spawnInterval && this.bubbles.length < 6) {
@@ -534,11 +542,11 @@ export class BubblePopGame {
       const bubble = this.bubbles[i];
 
       // Update vertical position
-      bubble.y -= bubble.speed;
+      bubble.y -= bubble.speed * frameScale;
 
       // Update horizontal wobble
       const wobbleX = Math.sin(currentTime * bubble.wobbleSpeed + bubble.wobbleOffset) * (bubble.wobbleAmp / 60);
-      bubble.x += wobbleX;
+      bubble.x += wobbleX * frameScale;
 
       // Keep within arena bounds
       bubble.x = Math.max(5, Math.min(arenaRect.width - bubble.size - 5, bubble.x));
@@ -556,7 +564,7 @@ export class BubblePopGame {
           this.updateComboUI();
           this.missedItems.add(this.currentTarget.data);
           soundCtrl.playWrong();
-          this.showFloatingText('หลุดจอ! -1❤️', bubble.x, 30, 'wrong');
+          this.showFloatingText('−1 ♥', bubble.x, 30, 'wrong');
 
           if (this.lives <= 0) {
             this.removeBubble(i);

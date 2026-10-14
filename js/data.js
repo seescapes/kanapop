@@ -3,18 +3,18 @@
  */
 
 export const KANA_ROWS = [
-  { id: 'all', label: 'ทั้งหมด (All)' },
-  { id: 'a', label: 'あ (A-row: a, i, u, e, o)' },
-  { id: 'ka', label: 'か (Ka-row: ka, ki, ku, ke, ko)' },
-  { id: 'sa', label: 'さ (Sa-row: sa, shi, su, se, so)' },
-  { id: 'ta', label: 'た (Ta-row: ta, chi, tsu, te, to)' },
-  { id: 'na', label: 'な (Na-row: na, ni, nu, ne, no)' },
-  { id: 'ha', label: 'は (Ha-row: ha, hi, fu, he, ho)' },
-  { id: 'ma', label: 'ま (Ma-row: ma, mi, mu, me, mo)' },
-  { id: 'ya', label: 'や (Ya-row: ya, yu, yo)' },
-  { id: 'ra', label: 'ら (Ra-row: ra, ri, ru, re, ro)' },
-  { id: 'wa', label: 'わ (Wa-row: wa, wo, n)' },
-  { id: 'dakuten', label: 'が行/ざ行... (Dakuten: ga, za, da, ba, pa)' }
+  { id: 'all', label: 'All' },
+  { id: 'a', label: 'あ a' },
+  { id: 'ka', label: 'か ka' },
+  { id: 'sa', label: 'さ sa' },
+  { id: 'ta', label: 'た ta' },
+  { id: 'na', label: 'な na' },
+  { id: 'ha', label: 'は ha' },
+  { id: 'ma', label: 'ま ma' },
+  { id: 'ya', label: 'や ya' },
+  { id: 'ra', label: 'ら ra' },
+  { id: 'wa', label: 'わ wa' },
+  { id: 'dakuten', label: 'が Dakuten' }
 ];
 
 export const KANA_DATA = [

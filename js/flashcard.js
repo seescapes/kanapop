@@ -21,10 +21,8 @@ export class FlashcardController {
   initDOM() {
     this.cardElement = document.getElementById('flashcard');
     this.cardFrontChar = document.getElementById('fc-front-char');
-    this.cardFrontSub = document.getElementById('fc-front-sub');
     this.cardBackRomaji = document.getElementById('fc-back-romaji');
     this.cardBackAlt = document.getElementById('fc-back-alt');
-    this.cardBackAltLabel = document.getElementById('fc-back-alt-label');
 
     this.btnPrev = document.getElementById('fc-prev');
     this.btnNext = document.getElementById('fc-next');
@@ -183,9 +181,7 @@ export class FlashcardController {
     const key = `${this.kanaType}_${current.romaji}`;
     const isMastered = !!this.masteredMap[key];
     this.btnMastered.classList.toggle('active', isMastered);
-    this.btnMastered.innerHTML = isMastered
-      ? '★ จำได้แล้ว (Mastered)'
-      : '☆ ทำเครื่องหมายว่าจำได้';
+    this.btnMastered.textContent = isMastered ? '★' : '☆';
   }
 
   playCurrentAudio() {
@@ -205,13 +201,10 @@ export class FlashcardController {
 
     const char = this.kanaType === 'hiragana' ? current.hiragana : current.katakana;
     const altChar = this.kanaType === 'hiragana' ? current.katakana : current.hiragana;
-    const altLabel = this.kanaType === 'hiragana' ? 'Katakana' : 'Hiragana';
 
     if (this.cardFrontChar) this.cardFrontChar.textContent = char;
-    if (this.cardFrontSub) this.cardFrontSub.textContent = `วรรค ${current.row.toUpperCase()} • แตะเพื่อพลิก`;
     if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.romaji;
     if (this.cardBackAlt) this.cardBackAlt.textContent = altChar;
-    if (this.cardBackAltLabel) this.cardBackAltLabel.textContent = `${altLabel}:`;
 
     if (this.counterEl) {
       this.counterEl.textContent = `${this.currentIndex + 1} / ${this.cards.length}`;

@@ -54,12 +54,15 @@ class SoundController {
       window.speechSynthesis.cancel(); // Stop any pending speech
       const utterance = new SpeechSynthesisUtterance(kana);
       utterance.lang = 'ja-JP';
-      utterance.rate = 0.9; // Slightly slower for clarity
-      utterance.pitch = 1.05;
+      utterance.rate = 0.5; // A single kana is very short at normal speed
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
       if (this.japaneseVoice) {
         utterance.voice = this.japaneseVoice;
       }
-      window.speechSynthesis.speak(utterance);
+      // Speaking immediately after cancel() can clip the start in Chrome/Safari
+      clearTimeout(this.speakTimer);
+      this.speakTimer = setTimeout(() => window.speechSynthesis.speak(utterance), 60);
     } catch (e) {
       console.warn('SpeechSynthesis error:', e);
     }

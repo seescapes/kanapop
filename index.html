@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>KanaPop & Flashcards - จำฮิระงะนะ คาตากานะ</title>
+  <title>KanaPop</title>
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/game.css">
 </head>
@@ -11,27 +11,17 @@
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
-      <div class="header-brand">
-        <div class="brand-icon">🫧</div>
-        <div>
-          <h1 class="brand-title">KanaPop</h1>
-          <p class="brand-subtitle">จำฮิระงะนะ & คาตากานะ สนุกๆ</p>
-        </div>
-      </div>
+      <h1 class="brand-title">KanaPop</h1>
       <div class="header-actions">
-        <button id="btn-toggle-sfx" class="btn-icon-tag" title="เปิด/ปิดเสียงเอฟเฟกต์">🔊 SFX</button>
-        <button id="btn-toggle-voice" class="btn-icon-tag" title="เปิด/ปิดเสียงอ่านญี่ปุ่น">🗣️ ญี่ปุ่น</button>
+        <button id="btn-toggle-sfx" class="btn-icon-tag" title="Sound effects">SFX</button>
+        <button id="btn-toggle-voice" class="btn-icon-tag" title="Voice">Voice</button>
       </div>
     </header>
 
     <!-- Navigation Tabs -->
     <nav class="nav-tabs" role="tablist">
-      <button class="nav-tab-btn active" data-tab="tab-flashcards" role="tab" aria-selected="true">
-        <span>🃏</span> บัตรคำ (Cards)
-      </button>
-      <button class="nav-tab-btn" data-tab="tab-game" role="tab" aria-selected="false">
-        <span>🫧</span> เกม Bubble Pop
-      </button>
+      <button class="nav-tab-btn active" data-tab="tab-flashcards" role="tab" aria-selected="true">Cards</button>
+      <button class="nav-tab-btn" data-tab="tab-game" role="tab" aria-selected="false">Bubble Pop</button>
     </nav>
 
     <!-- ==========================================
@@ -52,20 +42,14 @@
         </div>
 
         <div class="filter-row-container">
-          <label for="fc-row-select">หมวดหมู่วรรค:</label>
-          <select id="fc-row-select" class="select-custom"></select>
+          <select id="fc-row-select" class="select-custom" aria-label="Row"></select>
+          <span id="fc-counter" class="fc-counter">1 / 46</span>
         </div>
       </section>
 
       <!-- Status Bar -->
-      <div class="fc-status-bar">
-        <div class="fc-counter-row">
-          <span>ความคืบหน้า</span>
-          <span id="fc-counter">1 / 46</span>
-        </div>
-        <div class="progress-track">
-          <div id="fc-progress-bar" class="progress-fill"></div>
-        </div>
+      <div class="progress-track">
+        <div id="fc-progress-bar" class="progress-fill"></div>
       </div>
 
       <!-- 3D Flip Card -->
@@ -74,49 +58,34 @@
           <!-- FRONT FACE -->
           <div class="card-face card-face-front">
             <div class="card-top-bar">
-              <span class="card-badge">ตัวอักษร</span>
-              <button id="fc-audio" class="card-audio-btn no-flip" title="ฟังเสียงอ่าน">🔊</button>
+              <button id="fc-mastered" class="btn-mastered-toggle no-flip" title="Mark as learned">☆</button>
+              <button id="fc-audio" class="card-audio-btn no-flip" title="Play sound (P)">🔊</button>
             </div>
             <div class="card-main-content">
               <div id="fc-front-char" class="kana-large">あ</div>
-              <p id="fc-front-sub" class="card-hint">วรรค A • แตะเพื่อพลิก</p>
             </div>
-            <div class="card-bottom-bar">
-              <button id="fc-mastered" class="btn-mastered-toggle no-flip">☆ ทำเครื่องหมายว่าจำได้</button>
-            </div>
+            <div class="card-bottom-bar"></div>
           </div>
 
           <!-- BACK FACE -->
           <div class="card-face card-face-back">
-            <div class="card-top-bar">
-              <span class="card-badge">คำอ่าน Romaji</span>
-              <span class="card-hint">แตะเพื่อพลิกกลับ</span>
-            </div>
+            <div class="card-top-bar"></div>
             <div class="card-main-content">
               <div id="fc-back-romaji" class="romaji-large">a</div>
-              <div class="kana-alt-info">
-                <span id="fc-back-alt-label" class="kana-alt-label">Katakana:</span>
-                <span id="fc-back-alt" class="kana-alt-char">ア</span>
-              </div>
+              <div id="fc-back-alt" class="kana-alt-char">ア</div>
             </div>
-            <div class="card-bottom-bar">
-              <p class="card-hint">ออกเสียง: อะ (สั้น กระชับ)</p>
-            </div>
+            <div class="card-bottom-bar"></div>
           </div>
         </div>
       </div>
 
       <!-- Controls -->
       <div class="fc-controls">
-        <button id="fc-prev" class="btn-ctrl" title="การ์ดก่อนหน้า">← ก่อนหน้า</button>
-        <button id="fc-flip" class="btn-ctrl btn-ctrl-primary" title="พลิกการ์ด (Spacebar)">🔄 พลิกการ์ด</button>
-        <button id="fc-next" class="btn-ctrl" title="การ์ดถัดไป">ถัดไป →</button>
-        <button id="fc-shuffle" class="btn-ctrl" title="สุ่มลำดับการ์ด">🔀 สุ่ม</button>
+        <button id="fc-prev" class="btn-ctrl" title="Previous (←)">←</button>
+        <button id="fc-flip" class="btn-ctrl btn-ctrl-primary" title="Flip (Space)">Flip</button>
+        <button id="fc-next" class="btn-ctrl" title="Next (→)">→</button>
+        <button id="fc-shuffle" class="btn-ctrl" title="Shuffle">Shuffle</button>
       </div>
-
-      <p class="keyboard-hints">
-        คีย์ลัด: <kbd>Space</kbd> พลิกการ์ด | <kbd>→</kbd> ถัดไป | <kbd>←</kbd> ย้อนกลับ | <kbd>P</kbd> ฟังเสียง
-      </p>
     </main>
 
     <!-- ==========================================
@@ -126,109 +95,85 @@
       <!-- HUD Bar -->
       <div class="game-hud">
         <div class="hud-stat">
-          <span class="hud-label">คะแนน (Score)</span>
+          <span class="hud-label">Score</span>
           <span id="game-score" class="hud-val">0</span>
         </div>
 
         <div id="combo-badge" class="combo-badge hidden">
-          <span>🔥</span> <span id="combo-count">0x Combo</span>
+          <span id="combo-count">0x</span>
         </div>
 
-        <div class="hud-stat">
-          <span class="hud-label">พลังชีวิต</span>
-          <div id="hearts-container" class="hud-hearts">
-            <span class="heart active">❤️</span>
-            <span class="heart active">❤️</span>
-            <span class="heart active">❤️</span>
-          </div>
+        <div id="hearts-container" class="hud-hearts">
+          <span class="heart active">♥</span>
+          <span class="heart active">♥</span>
+          <span class="heart active">♥</span>
         </div>
 
         <div class="hud-stat" style="text-align: right;">
-          <span class="hud-label">สถิติสูงสุด</span>
+          <span class="hud-label">Best</span>
           <span id="game-highscore" class="hud-val">0</span>
         </div>
       </div>
 
       <!-- Target Banner -->
       <div class="target-banner">
-        <div class="target-info">
-          <span id="target-type" class="target-sub">Hiragana (ひらがな)</span>
-          <div class="target-prompt-row">
-            <span class="target-prompt-label">แตะฟองสบู่เสียง:</span>
-            <span id="target-romaji" class="target-romaji">KA</span>
-          </div>
-        </div>
-        <button id="btn-replay-voice" class="btn-replay-voice" title="ฟังเสียงซ้ำ">🔊</button>
+        <span id="target-romaji" class="target-romaji">–</span>
+        <button id="btn-replay-voice" class="btn-replay-voice" title="Replay sound">🔊</button>
       </div>
 
       <!-- Game Arena Container -->
       <div id="game-arena" class="game-arena">
         <!-- Start Game Overlay -->
         <div id="game-start-overlay" class="game-overlay">
-          <div class="overlay-icon">🫧</div>
-          <h2 class="overlay-title">Bubble Pop Arcade!</h2>
-          <p class="overlay-desc">
-            จิ้มฟองสบู่ตัวอักษรญี่ปุ่นที่ตรงกับคำอ่าน Romaji ด้านบนให้แตกก่อนจะลอยหลุดจอ! อย่าจิ้มตัวผิดนะ!
-          </p>
+          <h2 class="overlay-title">Bubble Pop</h2>
 
           <div class="game-settings-box">
-            <div class="setting-row">
-              <label for="game-type-select">ชุดตัวอักษร:</label>
-              <select id="game-type-select" class="select-custom">
-                <option value="hiragana">あ Hiragana เท่านั้น</option>
-                <option value="katakana">ア Katakana เท่านั้น</option>
-                <option value="mixed">🔀 ผสมทั้งสองแบบ</option>
-              </select>
-            </div>
-            <div class="setting-row">
-              <label for="game-row-select">วรรคที่ฝึก:</label>
-              <select id="game-row-select" class="select-custom"></select>
-            </div>
+            <select id="game-type-select" class="select-custom" aria-label="Kana set">
+              <option value="hiragana">あ Hiragana</option>
+              <option value="katakana">ア Katakana</option>
+              <option value="mixed">あ + ア Mixed</option>
+            </select>
+            <select id="game-row-select" class="select-custom" aria-label="Row"></select>
           </div>
 
-          <button id="btn-start-game" class="btn-game-primary">
-            <span>▶</span> เริ่มเล่นเกมเลย!
-          </button>
+          <button id="btn-start-game" class="btn-game-primary">Start</button>
         </div>
 
         <!-- Game Over Modal -->
         <div id="game-over-modal" class="game-overlay hidden">
-          <div class="overlay-icon">💫</div>
-          <h2 class="overlay-title">จบเกม (Game Over)</h2>
+          <h2 class="overlay-title">Game Over</h2>
 
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-label">คะแนนรอบนี้</div>
+              <div class="stat-label">Score</div>
               <div id="final-score" class="stat-value">0</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">คะแนนสูงสุด</div>
+              <div class="stat-label">Best</div>
               <div id="final-highscore" class="stat-value">0</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">ความแม่นยำ</div>
+              <div class="stat-label">Accuracy</div>
               <div id="final-accuracy" class="stat-value">0%</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">คอมโบสูงสุด</div>
+              <div class="stat-label">Max combo</div>
               <div id="final-max-combo" class="stat-value">0x</div>
             </div>
           </div>
 
           <div class="missed-section">
-            <div class="missed-title">ตัวอักษรที่ควรทบทวน (คลิกฟังเสียง):</div>
+            <div class="missed-title">Review</div>
             <div id="missed-review-list" class="missed-list"></div>
           </div>
 
-          <button id="btn-restart-game" class="btn-game-primary">
-            <span>🔄</span> เล่นใหม่อีกครั้ง
-          </button>
+          <button id="btn-restart-game" class="btn-game-primary">Play again</button>
         </div>
       </div>
 
       <!-- In-game footer controls -->
       <div class="game-bottom-bar">
-        <button id="btn-pause-game" class="btn-pause">⏸ พักเกม</button>
+        <button id="btn-pause-game" class="btn-pause">Pause</button>
       </div>
     </main>
   </div>
