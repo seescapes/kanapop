@@ -3,7 +3,7 @@
  * - Dynamic bubble physics & spawning
  * - Particle explosion on pop
  * - Combo multipliers & audio cues
- * - Health / Lives system (3 hearts)
+ * - Health / Lives system (segmented HP bar)
  * - High score persistence
  */
 import { KANA_DATA, KANA_ROWS, getFilteredKana } from './data.js';
@@ -39,6 +39,7 @@ export class BubblePopGame {
     this.initDOM();
     this.bindEvents();
     this.updateHighScoreDisplay();
+    this.updateHearts();
   }
 
   initDOM() {
@@ -140,15 +141,20 @@ export class BubblePopGame {
 
   updateHearts() {
     if (!this.heartsContainer) return;
+    // Filled segments = hits left before game over, empty = hits taken
+    const justLost = this.lives < (this.prevLives ?? this.lives) ? this.lives : -1;
     let html = '';
     for (let i = 0; i < this.maxLives; i++) {
-      if (i < this.lives) {
-        html += '<span class="heart active">♥</span>';
-      } else {
-        html += '<span class="heart empty">♥</span>';
-      }
+      const state = i < this.lives ? 'full' : 'empty';
+      const flash = i === justLost ? ' just-lost' : '';
+      html += `<span class="hp-seg ${state}${flash}"></span>`;
     }
     this.heartsContainer.innerHTML = html;
+    this.heartsContainer.classList.toggle('low', this.lives === 1);
+    this.prevLives = this.lives;
+
+    const hpText = document.getElementById('hp-text');
+    if (hpText) hpText.textContent = `${Math.max(this.lives, 0)} / ${this.maxLives}`;
   }
 
   startGame() {

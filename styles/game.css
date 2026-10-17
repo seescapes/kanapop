@@ -31,19 +31,52 @@
   line-height: 1.1;
 }
 
-.hud-hearts {
+.hud-hp {
+  align-items: center;
+  gap: 6px;
+}
+
+.hp-text {
+  color: var(--text-main);
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-bar {
   display: flex;
   gap: 4px;
-  font-size: 20px;
-  color: var(--primary);
+  width: 150px;
 }
 
-.heart {
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.hp-seg {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-muted);
+  transition: background 0.3s ease;
 }
 
-.heart.empty {
-  color: var(--border);
+.hp-seg.full {
+  background: #4f7a6b;
+}
+
+.hp-bar.low .hp-seg.full {
+  background: var(--primary);
+  animation: hp-low 0.8s ease-in-out infinite alternate;
+}
+
+.hp-seg.just-lost {
+  animation: hp-lost 0.5s ease-out;
+}
+
+@keyframes hp-low {
+  from { opacity: 1; }
+  to { opacity: 0.45; }
+}
+
+@keyframes hp-lost {
+  0% { background: var(--primary); transform: scaleY(1.6); }
+  100% { background: var(--surface-muted); transform: scaleY(1); }
 }
 
 /* Combo Badge */
