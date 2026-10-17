@@ -6,7 +6,8 @@ import { soundCtrl } from './audio.js';
 
 export class FlashcardController {
   constructor() {
-    this.kanaType = 'hiragana'; // 'hiragana' | 'katakana'
+    this.kanaType = 'hiragana'; // 'hiragana' | 'katakana' | 'mixed'
+    this.mixedTypes = new Map(); // romaji -> 'hiragana' | 'katakana' (used in mixed mode)
     this.selectedRow = 'all';
     this.currentIndex = 0;
     this.cards = [];
@@ -95,6 +96,7 @@ export class FlashcardController {
       this.typeSelector.addEventListener('change', (e) => {
         if (e.target.name === 'kana-type') {
           this.kanaType = e.target.value;
+          if (this.kanaType === 'mixed') this.rollMixedTypes();
           this.render();
         }
       });
@@ -125,7 +127,21 @@ export class FlashcardController {
     }
     this.currentIndex = 0;
     this.isFlipped = false;
+    this.rollMixedTypes();
     this.render();
+  }
+
+  // In mixed mode each card is randomly shown as hiragana or katakana
+  rollMixedTypes() {
+    this.mixedTypes.clear();
+    this.cards.forEach(card => {
+      this.mixedTypes.set(card.romaji, Math.random() < 0.5 ? 'hiragana' : 'katakana');
+    });
+  }
+
+  getCardType(card) {
+    if (this.kanaType !== 'mixed') return this.kanaType;
+    return this.mixedTypes.get(card.romaji) || 'hiragana';
   }
 
   toggleFlip() {
@@ -153,6 +169,7 @@ export class FlashcardController {
       [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
     this.currentIndex = 0;
+    this.rollMixedTypes();
     soundCtrl.playPop();
     this.resetFlipAndRender();
   }
@@ -168,7 +185,7 @@ export class FlashcardController {
   toggleMastered() {
     const current = this.getCurrentCard();
     if (!current) return;
-    const key = `${this.kanaType}_${current.romaji}`;
+    const key = `${this.getCardType(current)}_${current.romaji}`;
     this.masteredMap[key] = !this.masteredMap[key];
     localStorage.setItem('kana_mastered', JSON.stringify(this.masteredMap));
     this.updateMasteredUI();
@@ -178,7 +195,7 @@ export class FlashcardController {
   updateMasteredUI() {
     const current = this.getCurrentCard();
     if (!current || !this.btnMastered) return;
-    const key = `${this.kanaType}_${current.romaji}`;
+    const key = `${this.getCardType(current)}_${current.romaji}`;
     const isMastered = !!this.masteredMap[key];
     this.btnMastered.classList.toggle('active', isMastered);
     this.btnMastered.textContent = isMastered ? '★' : '☆';
@@ -187,7 +204,7 @@ export class FlashcardController {
   playCurrentAudio() {
     const current = this.getCurrentCard();
     if (!current) return;
-    const char = this.kanaType === 'hiragana' ? current.hiragana : current.katakana;
+    const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
     soundCtrl.speak(char);
   }
 
@@ -199,8 +216,8 @@ export class FlashcardController {
     const current = this.getCurrentCard();
     if (!current) return;
 
-    const char = this.kanaType === 'hiragana' ? current.hiragana : current.katakana;
-    const altChar = this.kanaType === 'hiragana' ? current.katakana : current.hiragana;
+    const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
+    const altChar = this.getCardType(current) === 'hiragana' ? current.katakana : current.hiragana;
 
     if (this.cardFrontChar) this.cardFrontChar.textContent = char;
     if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.romaji;
