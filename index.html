@@ -57,7 +57,14 @@
       </div>
 
       <!-- 3D Flip Card -->
-      <div class="flashcard-scene">
+      <div class="flashcard-stage">
+      <div id="fc-done" class="fc-done hidden">
+        <div class="fc-done-title">Done</div>
+        <button id="fc-restart" class="btn-ctrl btn-ctrl-primary">Again</button>
+      </div>
+      <div id="flashcard-scene" class="flashcard-scene">
+        <div class="swipe-hint swipe-hint-again">✗</div>
+        <div class="swipe-hint swipe-hint-know">✓</div>
         <div id="flashcard" class="flashcard-inner">
           <!-- FRONT FACE -->
           <div class="card-face card-face-front">
@@ -82,12 +89,13 @@
           </div>
         </div>
       </div>
+      </div>
 
       <!-- Controls -->
       <div class="fc-controls">
-        <button id="fc-prev" class="btn-ctrl" title="Previous (←)">←</button>
+        <button id="fc-again" class="btn-ctrl btn-again" title="Don't know (←)">✗</button>
         <button id="fc-flip" class="btn-ctrl btn-ctrl-primary" title="Flip (Space)">Flip</button>
-        <button id="fc-next" class="btn-ctrl" title="Next (→)">→</button>
+        <button id="fc-know" class="btn-ctrl btn-know" title="Know it (→)">✓</button>
         <button id="fc-shuffle" class="btn-ctrl" title="Shuffle">Shuffle</button>
       </div>
     </main>

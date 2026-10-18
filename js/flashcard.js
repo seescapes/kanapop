@@ -1,5 +1,7 @@
 /**
  * Flashcard Controller: 3D Flip Card, Row Filters, Shuffle, Audio, Mastery Tracker
+ * Swipe right (or →) = know it, card leaves the round.
+ * Swipe left (or ←) = don't know, card comes back a few cards later.
  */
 import { KANA_DATA, KANA_ROWS, getFilteredKana } from './data.js';
 import { soundCtrl } from './audio.js';
@@ -9,8 +11,10 @@ export class FlashcardController {
     this.kanaType = 'hiragana'; // 'hiragana' | 'katakana' | 'mixed'
     this.mixedTypes = new Map(); // romaji -> 'hiragana' | 'katakana' (used in mixed mode)
     this.selectedRow = 'all';
-    this.currentIndex = 0;
-    this.cards = [];
+    this.cards = [];   // full set for the selected row
+    this.queue = [];   // cards still to pass this round; queue[0] is shown
+    this.passed = 0;
+    this.isAnimating = false;
     this.isFlipped = false;
     this.masteredMap = JSON.parse(localStorage.getItem('kana_mastered') || '{}');
 
@@ -25,8 +29,11 @@ export class FlashcardController {
     this.cardBackRomaji = document.getElementById('fc-back-romaji');
     this.cardBackAlt = document.getElementById('fc-back-alt');
 
-    this.btnPrev = document.getElementById('fc-prev');
-    this.btnNext = document.getElementById('fc-next');
+    this.sceneElement = document.getElementById('flashcard-scene');
+    this.doneElement = document.getElementById('fc-done');
+    this.btnRestart = document.getElementById('fc-restart');
+    this.btnAgain = document.getElementById('fc-again');
+    this.btnKnow = document.getElementById('fc-know');
     this.btnShuffle = document.getElementById('fc-shuffle');
     this.btnFlip = document.getElementById('fc-flip');
     this.btnAudio = document.getElementById('fc-audio');
@@ -46,25 +53,23 @@ export class FlashcardController {
   }
 
   bindEvents() {
-    // Card flip on click
-    if (this.cardElement) {
-      this.cardElement.addEventListener('click', (e) => {
-        // Prevent flip if clicking audio or mastered button directly
-        if (e.target.closest('.no-flip')) return;
-        this.toggleFlip();
-      });
-    }
+    // Tap to flip, drag sideways to answer
+    this.bindSwipe();
 
     if (this.btnFlip) {
       this.btnFlip.addEventListener('click', () => this.toggleFlip());
     }
 
-    if (this.btnPrev) {
-      this.btnPrev.addEventListener('click', () => this.prevCard());
+    if (this.btnAgain) {
+      this.btnAgain.addEventListener('click', () => this.answer(false));
     }
 
-    if (this.btnNext) {
-      this.btnNext.addEventListener('click', () => this.nextCard());
+    if (this.btnKnow) {
+      this.btnKnow.addEventListener('click', () => this.answer(true));
+    }
+
+    if (this.btnRestart) {
+      this.btnRestart.addEventListener('click', () => this.shuffleCards());
     }
 
     if (this.btnShuffle) {
@@ -111,9 +116,9 @@ export class FlashcardController {
         e.preventDefault();
         this.toggleFlip();
       } else if (e.code === 'ArrowRight') {
-        this.nextCard();
+        this.answer(true);
       } else if (e.code === 'ArrowLeft') {
-        this.prevCard();
+        this.answer(false);
       } else if (e.code === 'KeyP') {
         this.playCurrentAudio();
       }
@@ -125,10 +130,14 @@ export class FlashcardController {
     if (this.cards.length === 0) {
       this.cards = getFilteredKana('all');
     }
-    this.currentIndex = 0;
-    this.isFlipped = false;
+    this.startRound();
+  }
+
+  startRound() {
+    this.queue = [...this.cards];
+    this.passed = 0;
     this.rollMixedTypes();
-    this.render();
+    this.resetFlipAndRender();
   }
 
   // In mixed mode each card is randomly shown as hiragana or katakana
@@ -144,22 +153,114 @@ export class FlashcardController {
     return this.mixedTypes.get(card.romaji) || 'hiragana';
   }
 
+  bindSwipe() {
+    const scene = this.sceneElement;
+    if (!scene) return;
+    const THRESHOLD = 80;
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let dragging = false;
+
+    scene.addEventListener('pointerdown', (e) => {
+      if (this.isAnimating || e.target.closest('.no-flip') || !this.getCurrentCard()) return;
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      dx = 0;
+      scene.setPointerCapture(e.pointerId);
+      scene.style.transition = 'none';
+    });
+
+    scene.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      dx = e.clientX - startX;
+      this.setDragOffset(dx);
+    });
+
+    const end = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      const moved = Math.hypot(e.clientX - startX, e.clientY - startY);
+      if (dx > THRESHOLD) {
+        this.answer(true);
+      } else if (dx < -THRESHOLD) {
+        this.answer(false);
+      } else {
+        scene.style.transition = '';
+        this.setDragOffset(0);
+        if (moved < 8 && e.type === 'pointerup') this.toggleFlip();
+      }
+    };
+    scene.addEventListener('pointerup', end);
+    scene.addEventListener('pointercancel', end);
+  }
+
+  setDragOffset(dx) {
+    if (!this.sceneElement) return;
+    this.sceneElement.style.transform = dx
+      ? `translateX(${dx}px) rotate(${dx / 20}deg)`
+      : '';
+    // Fade in the ✓ / ✗ hint as the card is dragged
+    this.sceneElement.style.setProperty('--know', Math.max(0, Math.min(dx / 80, 1)));
+    this.sceneElement.style.setProperty('--again', Math.max(0, Math.min(-dx / 80, 1)));
+  }
+
+  /** known = true: passed, leaves the round. false: comes back a few cards later. */
+  answer(known) {
+    const current = this.getCurrentCard();
+    if (!current || this.isAnimating) return;
+    this.isAnimating = true;
+
+    const key = `${this.getCardType(current)}_${current.romaji}`;
+    this.masteredMap[key] = known;
+    localStorage.setItem('kana_mastered', JSON.stringify(this.masteredMap));
+
+    if (known) {
+      soundCtrl.playCorrect(1);
+    } else {
+      soundCtrl.playPop();
+    }
+
+    // Fly the card off-screen, then swap in the next one
+    const scene = this.sceneElement;
+    const dir = known ? 1 : -1;
+    if (scene) {
+      scene.style.transition = 'transform 0.25s ease-in, opacity 0.25s ease-in';
+      scene.style.transform = `translateX(${dir * 120}%) rotate(${dir * 18}deg)`;
+      scene.style.opacity = '0';
+    }
+
+    setTimeout(() => {
+      this.queue.shift();
+      if (known) {
+        this.passed++;
+      } else {
+        // Re-insert a few cards later so it comes back soon
+        this.queue.splice(Math.min(3, this.queue.length), 0, current);
+      }
+
+      this.resetFlipAndRender();
+      if (scene) {
+        scene.style.transition = 'none';
+        this.setDragOffset(0);
+        scene.style.transform = 'scale(0.94)';
+        void scene.offsetWidth; // apply before animating back in
+        scene.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+        scene.style.transform = '';
+        scene.style.opacity = '';
+      }
+      this.isAnimating = false;
+    }, 250);
+  }
+
   toggleFlip() {
+    if (!this.getCurrentCard()) return;
     this.isFlipped = !this.isFlipped;
     if (this.cardElement) {
       this.cardElement.classList.toggle('flipped', this.isFlipped);
     }
     soundCtrl.playPop();
-  }
-
-  nextCard() {
-    this.currentIndex = (this.currentIndex + 1) % this.cards.length;
-    this.resetFlipAndRender();
-  }
-
-  prevCard() {
-    this.currentIndex = (this.currentIndex - 1 + this.cards.length) % this.cards.length;
-    this.resetFlipAndRender();
   }
 
   shuffleCards() {
@@ -168,16 +269,18 @@ export class FlashcardController {
       const j = Math.floor(Math.random() * (i + 1));
       [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
-    this.currentIndex = 0;
-    this.rollMixedTypes();
     soundCtrl.playPop();
-    this.resetFlipAndRender();
+    this.startRound();
   }
 
   resetFlipAndRender() {
     this.isFlipped = false;
     if (this.cardElement) {
+      // Snap back to the front without playing the flip animation
+      this.cardElement.style.transition = 'none';
       this.cardElement.classList.remove('flipped');
+      void this.cardElement.offsetWidth;
+      this.cardElement.style.transition = '';
     }
     this.render();
   }
@@ -209,12 +312,19 @@ export class FlashcardController {
   }
 
   getCurrentCard() {
-    return this.cards[this.currentIndex] || null;
+    return this.queue[0] || null;
   }
 
   render() {
+    const total = this.cards.length;
+    if (this.counterEl) this.counterEl.textContent = `${this.passed} / ${total}`;
+    if (this.progressBar) this.progressBar.style.width = `${(this.passed / total) * 100}%`;
+
     const current = this.getCurrentCard();
-    if (!current) return;
+    const done = !current;
+    if (this.sceneElement) this.sceneElement.classList.toggle('hidden', done);
+    if (this.doneElement) this.doneElement.classList.toggle('hidden', !done);
+    if (done) return;
 
     const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
     const altChar = this.getCardType(current) === 'hiragana' ? current.katakana : current.hiragana;
@@ -222,15 +332,6 @@ export class FlashcardController {
     if (this.cardFrontChar) this.cardFrontChar.textContent = char;
     if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.romaji;
     if (this.cardBackAlt) this.cardBackAlt.textContent = altChar;
-
-    if (this.counterEl) {
-      this.counterEl.textContent = `${this.currentIndex + 1} / ${this.cards.length}`;
-    }
-
-    if (this.progressBar) {
-      const pct = ((this.currentIndex + 1) / this.cards.length) * 100;
-      this.progressBar.style.width = `${pct}%`;
-    }
 
     this.updateMasteredUI();
   }
