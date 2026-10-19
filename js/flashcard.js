@@ -9,7 +9,6 @@ import { soundCtrl } from './audio.js';
 export class FlashcardController {
   constructor() {
     this.kanaType = 'hiragana'; // 'hiragana' | 'katakana' | 'mixed'
-    this.mixedTypes = new Map(); // romaji -> 'hiragana' | 'katakana' (used in mixed mode)
     this.selectedRow = 'all';
     this.cards = [];   // full set for the selected row
     this.queue = [];   // cards still to pass this round; queue[0] is shown
@@ -101,8 +100,7 @@ export class FlashcardController {
       this.typeSelector.addEventListener('change', (e) => {
         if (e.target.name === 'kana-type') {
           this.kanaType = e.target.value;
-          if (this.kanaType === 'mixed') this.rollMixedTypes();
-          this.render();
+          this.updateCardSet(); // deck size changes (mixed = both scripts)
         }
       });
     }
@@ -125,32 +123,35 @@ export class FlashcardController {
     });
   }
 
+  // Each card is a kana entry plus the script it is shown in.
+  // Mixed mode holds both scripts, so the deck is twice as long, shuffled together.
   updateCardSet() {
-    this.cards = getFilteredKana(this.selectedRow);
-    if (this.cards.length === 0) {
-      this.cards = getFilteredKana('all');
+    let kana = getFilteredKana(this.selectedRow);
+    if (kana.length === 0) {
+      kana = getFilteredKana('all');
     }
+    const types = this.kanaType === 'mixed' ? ['hiragana', 'katakana'] : [this.kanaType];
+    this.cards = types.flatMap(type => kana.map(k => ({ ...k, type })));
+    if (this.kanaType === 'mixed') this.shuffleDeck();
     this.startRound();
   }
 
   startRound() {
     this.queue = [...this.cards];
     this.passed = 0;
-    this.rollMixedTypes();
     this.resetFlipAndRender();
   }
 
-  // In mixed mode each card is randomly shown as hiragana or katakana
-  rollMixedTypes() {
-    this.mixedTypes.clear();
-    this.cards.forEach(card => {
-      this.mixedTypes.set(card.romaji, Math.random() < 0.5 ? 'hiragana' : 'katakana');
-    });
+  shuffleDeck() {
+    // Fisher-Yates shuffle
+    for (let i = this.cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+    }
   }
 
   getCardType(card) {
-    if (this.kanaType !== 'mixed') return this.kanaType;
-    return this.mixedTypes.get(card.romaji) || 'hiragana';
+    return card.type;
   }
 
   bindSwipe() {
@@ -264,11 +265,7 @@ export class FlashcardController {
   }
 
   shuffleCards() {
-    // Fisher-Yates shuffle
-    for (let i = this.cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-    }
+    this.shuffleDeck();
     soundCtrl.playPop();
     this.startRound();
   }
