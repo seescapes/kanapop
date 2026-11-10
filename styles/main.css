@@ -40,6 +40,24 @@ body {
 
 button {
   font-family: inherit;
+  touch-action: manipulation; /* no double-tap zoom delay on phones */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html, body {
+  overscroll-behavior: none; /* no pull-to-refresh / bounce while playing */
+}
+
+/* Phones: tighten spacing so the card and buttons fit on one screen */
+@media (max-width: 480px) {
+  .app-header { margin-bottom: 14px; }
+  .nav-tabs { margin-bottom: 14px; }
+  .flashcard-stage { height: min(340px, 48vh); }
+  .kana-large { font-size: 112px; }
+  .fc-controls { gap: 8px; }
+  .btn-ctrl { padding: 12px 14px; }
+  .btn-ctrl-primary { padding: 12px 24px; }
 }
 
 /* App Container */
@@ -47,7 +65,9 @@ button {
   max-width: 560px;
   width: 100%;
   margin: 0 auto;
-  padding: 20px 16px 32px;
+  /* Respect the notch / home indicator when launched from the home screen */
+  padding: calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+    calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   flex: 1;
