@@ -5,10 +5,11 @@
  */
 import { KANA_DATA, KANA_ROWS, getFilteredKana } from './data.js';
 import { soundCtrl } from './audio.js';
+import { KANJI_GROUPS, getFilteredKanji } from './kanji.js';
 
 export class FlashcardController {
   constructor() {
-    this.kanaType = 'hiragana'; // 'hiragana' | 'katakana' | 'mixed'
+    this.kanaType = 'hiragana'; // 'hiragana' | 'katakana' | 'mixed' | 'kanji'
     this.selectedRow = 'all';
     this.cards = [];   // full set for the selected row
     this.queue = [];   // cards still to pass this round; queue[0] is shown
@@ -27,6 +28,7 @@ export class FlashcardController {
     this.cardFrontChar = document.getElementById('fc-front-char');
     this.cardBackRomaji = document.getElementById('fc-back-romaji');
     this.cardBackAlt = document.getElementById('fc-back-alt');
+    this.cardBackMeaning = document.getElementById('fc-back-meaning');
 
     this.sceneElement = document.getElementById('flashcard-scene');
     this.doneElement = document.getElementById('fc-done');
@@ -43,12 +45,17 @@ export class FlashcardController {
     this.rowSelect = document.getElementById('fc-row-select');
     this.typeSelector = document.getElementById('fc-type-selector');
 
-    // Populate row dropdown
-    if (this.rowSelect) {
-      this.rowSelect.innerHTML = KANA_ROWS.map(
-        row => `<option value="${row.id}">${row.label}</option>`
-      ).join('');
-    }
+    this.populateRowSelect();
+  }
+
+  // Kana cards filter by row (あ, か, …); kanji cards filter by topic
+  populateRowSelect() {
+    if (!this.rowSelect) return;
+    const options = this.kanaType === 'kanji' ? KANJI_GROUPS : KANA_ROWS;
+    this.rowSelect.innerHTML = options.map(
+      row => `<option value="${row.id}">${row.label}</option>`
+    ).join('');
+    this.selectedRow = 'all';
   }
 
   bindEvents() {
@@ -99,7 +106,9 @@ export class FlashcardController {
     if (this.typeSelector) {
       this.typeSelector.addEventListener('change', (e) => {
         if (e.target.name === 'kana-type') {
+          const wasKanji = this.kanaType === 'kanji';
           this.kanaType = e.target.value;
+          if (wasKanji !== (this.kanaType === 'kanji')) this.populateRowSelect();
           this.updateCardSet(); // deck size changes (mixed = both scripts)
         }
       });
@@ -126,6 +135,11 @@ export class FlashcardController {
   // Each card is a kana entry plus the script it is shown in.
   // Mixed mode holds both scripts, so the deck is twice as long, shuffled together.
   updateCardSet() {
+    if (this.kanaType === 'kanji') {
+      this.cards = getFilteredKanji(this.selectedRow).map(k => ({ ...k, type: 'kanji' }));
+      this.startRound();
+      return;
+    }
     let kana = getFilteredKana(this.selectedRow);
     if (kana.length === 0) {
       kana = getFilteredKana('all');
@@ -152,6 +166,10 @@ export class FlashcardController {
 
   getCardType(card) {
     return card.type;
+  }
+
+  getMasteryKey(card) {
+    return card.type === 'kanji' ? `kanji_${card.kanji}` : `${card.type}_${card.romaji}`;
   }
 
   bindSwipe() {
@@ -213,7 +231,7 @@ export class FlashcardController {
     if (!current || this.isAnimating) return;
     this.isAnimating = true;
 
-    const key = `${this.getCardType(current)}_${current.romaji}`;
+    const key = this.getMasteryKey(current);
     this.masteredMap[key] = known;
     localStorage.setItem('kana_mastered', JSON.stringify(this.masteredMap));
 
@@ -285,7 +303,7 @@ export class FlashcardController {
   toggleMastered() {
     const current = this.getCurrentCard();
     if (!current) return;
-    const key = `${this.getCardType(current)}_${current.romaji}`;
+    const key = this.getMasteryKey(current);
     this.masteredMap[key] = !this.masteredMap[key];
     localStorage.setItem('kana_mastered', JSON.stringify(this.masteredMap));
     this.updateMasteredUI();
@@ -295,7 +313,7 @@ export class FlashcardController {
   updateMasteredUI() {
     const current = this.getCurrentCard();
     if (!current || !this.btnMastered) return;
-    const key = `${this.getCardType(current)}_${current.romaji}`;
+    const key = this.getMasteryKey(current);
     const isMastered = !!this.masteredMap[key];
     this.btnMastered.classList.toggle('active', isMastered);
     this.btnMastered.textContent = isMastered ? '★' : '☆';
@@ -304,6 +322,10 @@ export class FlashcardController {
   playCurrentAudio() {
     const current = this.getCurrentCard();
     if (!current) return;
+    if (current.type === 'kanji') {
+      soundCtrl.speak(current.kana);
+      return;
+    }
     const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
     soundCtrl.speak(char);
   }
@@ -323,12 +345,31 @@ export class FlashcardController {
     if (this.doneElement) this.doneElement.classList.toggle('hidden', !done);
     if (done) return;
 
-    const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
-    const altChar = this.getCardType(current) === 'hiragana' ? current.katakana : current.hiragana;
+    const isKanji = current.type === 'kanji';
+    if (this.cardElement) this.cardElement.classList.toggle('is-kanji', isKanji);
 
-    if (this.cardFrontChar) this.cardFrontChar.textContent = char;
-    if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.romaji;
-    if (this.cardBackAlt) this.cardBackAlt.textContent = altChar;
+    if (isKanji) {
+      // Front: the word. Back: kana reading, romaji, English meaning
+      if (this.cardFrontChar) {
+        this.cardFrontChar.textContent = current.kanji;
+        this.cardFrontChar.dataset.len = Math.min(current.kanji.length, 4);
+      }
+      if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.kana;
+      this.cardBackRomaji?.classList.toggle('long', current.kana.length > 6);
+      if (this.cardBackAlt) this.cardBackAlt.textContent = current.romaji;
+      if (this.cardBackMeaning) this.cardBackMeaning.textContent = current.meaning;
+    } else {
+      const char = this.getCardType(current) === 'hiragana' ? current.hiragana : current.katakana;
+      const altChar = this.getCardType(current) === 'hiragana' ? current.katakana : current.hiragana;
+      if (this.cardFrontChar) {
+        this.cardFrontChar.textContent = char;
+        delete this.cardFrontChar.dataset.len;
+      }
+      if (this.cardBackRomaji) this.cardBackRomaji.textContent = current.romaji;
+      this.cardBackRomaji?.classList.remove('long');
+      if (this.cardBackAlt) this.cardBackAlt.textContent = altChar;
+    }
+    if (this.cardBackMeaning) this.cardBackMeaning.classList.toggle('hidden', !isKanji);
 
     this.updateMasteredUI();
   }

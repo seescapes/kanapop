@@ -55,6 +55,11 @@ html, body {
   .nav-tabs { margin-bottom: 14px; }
   .flashcard-stage { height: min(340px, 48vh); }
   .kana-large { font-size: 112px; }
+  .kana-large[data-len="2"] { font-size: 96px; }
+  .kana-large[data-len="3"] { font-size: 72px; }
+  .kana-large[data-len="4"] { font-size: 58px; }
+  .type-segmented-control label { padding: 8px 4px; font-size: 13px; white-space: nowrap; }
+  .seg-glyph { display: none; }
   .fc-controls { gap: 8px; }
   .btn-ctrl { padding: 12px 14px; }
   .btn-ctrl-primary { padding: 12px 24px; }
@@ -418,6 +423,34 @@ html, body {
   font-weight: 800;
   line-height: 1;
   color: var(--primary);
+}
+
+/* Kanji words: shrink as the word gets longer so it fits the card */
+.kana-large[data-len="2"] { font-size: 104px; }
+.kana-large[data-len="3"] { font-size: 80px; }
+.kana-large[data-len="4"] { font-size: 64px; }
+
+.is-kanji .romaji-large {
+  font-size: 44px;
+  font-weight: 700;
+}
+
+.is-kanji .romaji-large.long {
+  font-size: 30px; /* e.g. えいぎょうちゅう */
+}
+
+.is-kanji .kana-alt-char {
+  font-size: 20px;
+}
+
+.card-meaning {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.card-meaning.hidden {
+  display: none;
 }
 
 .kana-alt-char {

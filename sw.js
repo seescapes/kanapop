@@ -3,7 +3,7 @@
  * Strategy: serve from cache instantly, refresh the cache in the background when online,
  * so a new version shows up on the next launch.
  */
-const CACHE = 'kanapop-v1';
+const CACHE = 'kanapop-v2'; // bump when the asset list changes
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
   './js/data.js',
   './js/flashcard.js',
   './js/game.js',
+  './js/kanji.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',

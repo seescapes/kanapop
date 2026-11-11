@@ -41,15 +41,19 @@
         <div id="fc-type-selector" class="type-segmented-control">
           <label>
             <input type="radio" name="kana-type" value="hiragana" checked>
-            <span>あ Hiragana</span>
+            <span><span class="seg-glyph">あ </span>Hiragana</span>
           </label>
           <label>
             <input type="radio" name="kana-type" value="katakana">
-            <span>ア Katakana</span>
+            <span><span class="seg-glyph">ア </span>Katakana</span>
           </label>
           <label>
             <input type="radio" name="kana-type" value="mixed">
             <span>Mixed</span>
+          </label>
+          <label>
+            <input type="radio" name="kana-type" value="kanji">
+            <span><span class="seg-glyph">漢 </span>Kanji</span>
           </label>
         </div>
 
@@ -92,6 +96,7 @@
             <div class="card-main-content">
               <div id="fc-back-romaji" class="romaji-large">a</div>
               <div id="fc-back-alt" class="kana-alt-char">ア</div>
+              <div id="fc-back-meaning" class="card-meaning hidden"></div>
             </div>
             <div class="card-bottom-bar"></div>
           </div>
